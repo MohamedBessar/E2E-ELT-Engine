@@ -1,9 +1,8 @@
-FROM apache/airflow:2.10.4-python3.12
+FROM apache/airflow:2.9.1-python3.9
 
-# Switch to root user for installing packages
 USER root
 
-# Install required system packages
+# Install necessary dependencies
 RUN apt-get update && apt-get install -y \
     build-essential \
     python3-dev \
@@ -11,27 +10,25 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
+# Create groups and users before switching to airflow user
+RUN groupadd -g 1000 airflow && \
+    usermod -g airflow airflow && \
+    addgroup --system mygroup && \
+    adduser --system --ingroup mygroup myuser
+
+# Switch to the airflow user
 USER airflow
 
 # Upgrade pip
 RUN pip install --upgrade pip
 
-# Create directories for logs and set permissions
-RUN mkdir -p /opt/airflow/incloud/datalake/logs && \
-    chown -R airflow /opt/airflow/incloud/datalake
+# Create necessary directories and set permissions
+RUN mkdir -p /opt/airflow/datalake/logs && \
+    chown -R airflow /opt/airflow/datalake
 
-
-# Set PYTHONPATH for accessing custom scripts
+# Set PYTHONPATH environment variable
 ENV PYTHONPATH=/opt/airflow/dags/scripts
 
-# Copy requirements file and install Python packages
+# Copy and install requirements
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy DAGs and scripts into the container
-COPY dags /opt/airflow/dags
-COPY scripts /opt/airflow/scripts
-
-RUN airflow db migrate
-# Set entrypoint for Airflow (if needed)
-# ENTRYPOINT ["/usr/local/bin/airflow"]
