@@ -28,7 +28,6 @@ x-airflow-common: &airflow-common
   networks:
     - my-network
 
-
 services:
   postgres:
     image: postgres:13
@@ -58,7 +57,7 @@ services:
     container_name: airflow-webserver
     command: webserver
     ports:
-      - "${HOST_IP:-0.0.0.0}:8080:8080"
+      - "${HOST_IP:-0.0.0.0}:8081:8080"
     healthcheck:
       test: ["CMD-SHELL", "curl --fail http://localhost:8080/health"]
       interval: 10s
@@ -89,6 +88,43 @@ services:
       _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-airflow}
       _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-airflow}
     restart: "no"
+
+  mainio:
+    build:
+      context: .
+    container_name: mainio
+    image: e2e-elt-engine-mainio  # Change to lowercase
+    command: ["airflow", "webserver"]
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=CeleryExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres/airflow
+      - AIRFLOW__CELERY__BROKER_URL=redis://redis:6379/0
+    ports:
+      - "8080:8080"
+    networks:
+      - my-network
+    healthcheck:
+      test: ["CMD-SHELL", "airflow healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  object-store:
+    image: minio/minio
+    environment:
+      - MINIO_ROOT_USER=admin
+      - MINIO_ROOT_PASSWORD=password
+    ports:
+      - "9001:9001"
+      - "9000:9000"
+    command: ["server", "/data", "--console-address", ":9001"]
+    healthcheck:
+      test: ["CMD-SHELL", "mc alias set minio http://localhost:9000 $${MINIO_ROOT_USER} $${MINIO_ROOT_PASSWORD} && mc mb minio/warehouse && mc anonymous set public minio/warehouse"]
+      interval: 2s
+      timeout: 2s
+      retries: 5
+    networks:
+      - my-network
 
 volumes:
   postgres-db-volume:
