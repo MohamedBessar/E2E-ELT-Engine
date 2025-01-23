@@ -173,3 +173,5 @@ cython_debug/
 airflow-webserver.pid
 airflow.cfg
 webserver_config.py
+
+secrets.env
