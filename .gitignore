@@ -169,3 +169,7 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+airflow-webserver.pid
+airflow.cfg
+webserver_config.py
