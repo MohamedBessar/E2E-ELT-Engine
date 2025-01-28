@@ -2,60 +2,33 @@ FROM apache/airflow:2.9.1-python3.9
 
 USER root
 
-<<<<<<< HEAD
-# Install system dependencies
-RUN apt-get update && \
+# Create airflow group and set permissions
+RUN groupadd -g 50000 airflow && \
+    usermod -a -G airflow airflow && \
+    apt-get update && \
     apt-get install -y --no-install-recommends \
         build-essential \
         python3-dev \
         libpq-dev \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+        curl \
+        unzip \
+        git \
+    && apt-get clean && \
+    apt-get install -y awscli && \
+    rm -rf /var/lib/apt/lists/*
 
-# Create directory structure with proper ownership
-# Use numeric UID/GID from base image (airflow user is 50000:50000)
-RUN mkdir -p /opt/airflow/datalake/logs && \
+# Create directories with numeric permissions
+RUN mkdir -p /opt/airflow/datalake/{logs,data} && \
     chown -R 50000:50000 /opt/airflow/datalake
 
 USER airflow
 
-# Environment configuration
-ENV PYTHONPATH=/opt/airflow/dags/scripts \
+# Environment setup
+ENV PYTHONPATH=${PYTHONPATH}:/opt/airflow/dags/scripts \
     AIRFLOW_HOME=/opt/airflow \
     AIRFLOW__CORE__LOAD_EXAMPLES=false
 
-# Upgrade pip and install requirements
-COPY --chown=50000:50000 requirements.txt .
-RUN pip install --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
-=======
-
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    python3-dev \
-    libpq-dev \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
-
-RUN groupadd -g 1000 airflow && \
-    usermod -g airflow airflow && \
-    addgroup --system mygroup && \
-    adduser --system --ingroup mygroup myuser
-
-USER airflow
-
-
-RUN pip install --upgrade pip
-
-
-RUN mkdir -p /opt/airflow/datalake/logs && \
-    chown -R airflow /opt/airflow/datalake
-
-
-ENV PYTHONPATH=/opt/airflow/dags/scripts
-
-
+# Dependency installation
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
->>>>>>> 330ddfd (update docekr-compose)
+RUN pip install --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir -r requirements.txt
