@@ -1,0 +1,47 @@
+version: 2
+
+models:
+
+  - name: stg_customers
+    discription : "customer data come from raw data in snowflake"
+    columns:
+      - name: "Customer ID"
+        description: "primary key for customers" 
+        data_type: varchar(20)
+        data_tests:
+          - not_null
+          - unique
+
+      - name: "Customer Name"
+        description: "name of the customers"
+        data_type: varchar(100)
+        data_tests:
+          - not_null
+
+      - name: Segment
+        description: "Customer segment information" 
+        data_type: varchar(20)
+        data_tests:
+          - not_null
+    
+    - name: stg_store
+      discription: "store data come from row data in snowflake"
+      columns:
+      - name: ""
+        description: "primary key for customers" 
+        data_type: varchar(20)
+        data_tests:
+          - not_null
+          - unique
+
+      - name: "Customer Name"
+        description: "name of the customers"
+        data_type: varchar(100)
+        data_tests:
+          - not_null
+
+      - name: Segment
+        description: "Customer segment information" 
+        data_type: varchar(20)
+        data_tests:
+          - not_null
